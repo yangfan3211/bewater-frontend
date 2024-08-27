@@ -1,5 +1,5 @@
 import { OptionalExceptFor } from "@/types/utils";
-import { agentAnon, agentAuthed } from "./agent";
+import { agentGithubApi, agentAnon, agentAuthed } from "./agent";
 import {
   ChallengeID,
   Project,
@@ -15,6 +15,20 @@ export async function getChallengeTProjects(challengeId: ChallengeID) {
     {}
   );
   return data.projects;
+}
+
+export async function fetchGithubTagsByurl(
+  githubURI: string,
+  projectID: ProjectId
+) {
+  if (!githubURI) return { projectID, tags: [] };
+  const githubURIPathname = new URL(githubURI).pathname;
+  const githubURIArray = githubURIPathname.split("/");
+  if (githubURIArray.length < 3) return { projectID, tags: [] };
+  const { data } = await agentGithubApi.get<{ names: string[] }>(
+    `/repos${githubURIPathname}/topics`
+  );
+  return { projectID, tags: data.names };
 }
 
 export async function getProjects(

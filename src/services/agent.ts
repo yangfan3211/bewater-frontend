@@ -64,4 +64,8 @@ const agentNext = axios.create({
   baseURL: isBrowser ? window.location.origin : "",
 });
 
-export { agentAuthed, agentAnon, agentNext };
+const agentGithubApi = axios.create({
+  baseURL: "https://api.github.com",
+});
+
+export { agentAuthed, agentAnon, agentNext, agentGithubApi };

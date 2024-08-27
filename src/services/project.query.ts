@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   getChallengeTProjects,
   getGitHubRepos,
@@ -10,8 +15,15 @@ import {
   putProjectStatus,
   getProjects,
   getProjectTags,
+  fetchGithubTagsByurl,
 } from "./project";
-import { ChallengeID, ProjectId, TeamID, ProjectStatus } from "./types";
+import {
+  ChallengeID,
+  ProjectId,
+  TeamID,
+  ProjectStatus,
+  Project,
+} from "./types";
 
 export function useFetchChallengeProjects(challengeId: ChallengeID) {
   return useQuery({
@@ -34,6 +46,20 @@ export function useFetchProjects(
     queryFn: async () => {
       return getProjects(limit, tags, cursorId);
     },
+  });
+}
+
+export function useFetchProjectGithubTags(projects: Project[]) {
+  return useQueries({
+    queries: projects.map((project) => {
+      return {
+        queryKey: ["project", "github-tags", project.id],
+        queryFn: () =>
+          fetchGithubTagsByurl(project.githubURI || "", project.id),
+        enabled: !!project.githubURI,
+        cacheTime: 1000 * 60 * 60 * 24,
+      };
+    }),
   });
 }
 

@@ -5,6 +5,7 @@ import { ProjectItem } from "./project-item";
 import { useFetchChallengeById } from "@/services/challenge.query";
 import {
   useFetchChallengeProjects,
+  useFetchProjectGithubTags,
   useFetchProjects,
   useFetchProjectTags,
 } from "@/services/project.query";
@@ -36,9 +37,17 @@ export default function ProjectList({ lng }: { lng: string }) {
   const [selectedTags, setSelectedTags] = useState<string[] | undefined>(
     undefined
   );
-  const { data: projectsFetched, isLoading: isLoadingProject,isFetching:isFetchongProject } =
-    useFetchProjects(20, selectedTags, cursorId);
+  const [githubTags, setGithubTags] = useState<Map<string, string[]>>(
+    new Map()
+  );
+  const {
+    data: projectsFetched,
+    isLoading: isLoadingProject,
+    isFetching: isFetchongProject,
+  } = useFetchProjects(20, selectedTags, cursorId);
   // const { data: tags = [], isLoading: isLoadingTags } = useFetchProjectTags();
+  const githubTagsData = useFetchProjectGithubTags(projectsFetched || []);
+  const githubTagsStatus = githubTagsData.map((query) => query.data);
   const loadMore = () => {
     setCursorId(projects[projects.length - 1].externalId);
   };
@@ -50,7 +59,14 @@ export default function ProjectList({ lng }: { lng: string }) {
       setProjects((prev) => [...prev, ...projectsFetched]);
     }
   }, [projectsFetched]);
-
+  useEffect(() => {
+    githubTagsData.forEach((query) => {
+      if (query.data && query.isSuccess) {
+        const { projectID, tags } = query.data;
+        setGithubTags((prev) => prev.set(projectID, tags));
+      }
+    });
+  }, [...githubTagsStatus, githubTagsData]);
   if (isLoadingProject && projects.length <= 0) return <Loading />;
   if (!(projects && projects.length > 0)) return null;
 
@@ -119,7 +135,14 @@ export default function ProjectList({ lng }: { lng: string }) {
         </div> */}
         <div className="grid gap-4 grid-cols-300">
           {projects.map((project) => {
-            return <ProjectItem key={project.id} project={project} lng={lng} />;
+            return (
+              <ProjectItem
+                key={project.id}
+                project={project}
+                githubTags={githubTags.get(project.id) || []}
+                lng={lng}
+              />
+            );
           })}
         </div>
         <button
